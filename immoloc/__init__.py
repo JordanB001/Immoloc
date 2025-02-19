@@ -3,16 +3,13 @@ from os import getenv
 from dotenv import load_dotenv
 
 
-def create_app():
+def create_app() -> Flask:
     
     load_dotenv()
-    try:
-        isinstance(getenv('SECRET_KEY'), str)
-        isinstance(getenv('API_KEY'), str)
-    except Exception as e:
-        raise Exception("Environment variables SECRET_KEY or API_KEY are not set properly.")
+    if not isinstance(getenv('SECRET_KEY'), str) or not isinstance(getenv('API_KEY'), str):
+        raise ValueError("Environment variables SECRET_KEY or API_KEY are not set properly.")    
     
-    app = Flask(__name__)
+    app: Flask = Flask(__name__)
 
     #Updates the config
     app.config.from_mapping(
