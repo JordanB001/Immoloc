@@ -1,3 +1,8 @@
+# API Description
+
+The backend API is developed using Flask (Python) and exposes several REST endpoints to interact with the frontend.
+It manages three main functionalities: real estate ad analysis, price estimation, and optimized ad generation.
+
 # Getting started
 
 ## Requirements
