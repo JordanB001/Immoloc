@@ -1,8 +1,9 @@
 
-from flask import Blueprint, json, jsonify, request
-from ..model import model, client
 import re
+from flask import Blueprint, json, jsonify, request
 
+from ..model import model, client
+from ..verify_parameters import verify_parameters
 
 bp = Blueprint("estimate", __name__)
 
@@ -21,32 +22,25 @@ def estimate():
             return jsonify({"error": "Data missing: real_estate_ad"}), 400
     except Exception as e:
         return jsonify({"error": f"Data error or data missing: {e}"}), 400
-        
+    
+    verify_parameters(real_estate_ad, area=True, type_of_property=True)
+    
     try:
         chat_response = client.chat.complete(
             model= model,
             messages = [
                 {
                     "role": "user",
-                    "content": f"Estimate a price range for a property. In format JSON : 'average_price' : add price here, 'min_range' : add min range prince here, 'max_range' :  add max range price here.  In French. Here is the announcement: {real_estate_ad},  Only If there is no place/location then display 'Entrer la localisation', Only If there is no surface (m2 / m² / m 2) then display 'Entrer la surface du bien', Only If there is no type of property then display 'Entrer le type du bien'."
+                    "content": f"Estimate a price range for a property. In format JSON : 'average_price' : add price here, 'min_range' : add min range prince here, 'max_range' :  add max range price here.  In French. Here is the announcement: {real_estate_ad},  Only If there is no place/location then display 'Entrer la localisation'."
                 }
             ]
         )
     except Exception as e:
         return f"{e}", 400
     
-    print(chat_response.choices[0].message.content)
-    
     if "Entrer la localisation" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: location"}), 400
-    if "Entrer la surface du bien" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: surface area"}), 400
-    if "Entrer le type du bien" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: type of property"}), 400
-    
-    # if "hypothétique" in chat_response.choices[0].message.content:
-    #     return jsonify({"error": "Not enough information for this localization"}), 200
-    
+        return jsonify({"error": "Data missing: location / not precise enough"}), 400
+
     try:
         match = re.search(r'\`\`json\s*([\s\S]*?)\s*\`\`', chat_response.choices[0].message.content)
         if match:

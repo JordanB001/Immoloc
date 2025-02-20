@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify
 
 from ..model import model, client
+from ..verify_parameters import verify_parameters
+from ..remove_star import remove_star
+
 
 bp = Blueprint("analyzer", __name__)
 
@@ -33,28 +36,26 @@ def analyzer():
             return jsonify({"error": "Data missing: real_estate_ad"}), 400
     except Exception as e:
         return jsonify({"error": f"Data error or data missing: {e}"}), 400
-
     
+    verify_result: list = verify_parameters(real_estate_ad, area=True, price=True, type_of_property=True)
+    if not verify_result[0]:
+        return jsonify({"error": verify_result[1]}), 400
+        
     try:
         chat_response = client.chat.complete(
             model=model,
             messages=[
                 {
                     "role": "user",
-                    "content": f"Analysis of real estate advertisements, Your goal is to give a critical opinion on this real estate ad. In French. Here is the announcement: {real_estate_ad}, Only If there is no place/location then display 'Entrer la localisation', Only If there is no surface (m2 / m² / m 2) then display 'Entrer la surface du bien', Only If there is no type of property then display 'Entrer le type du bien', Only If there is no price then display 'Entrer le prix'"
+                    "content": f"Analysis of real estate advertisements, Your goal is to give a critical opinion on this real estate ad and concise, 5 sentences max. In French. Here is the announcement: {real_estate_ad}. Only If there is no place/location then display 'Entrer la localisation' and don't comment this."
                 }
             ]
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+    print(chat_response.choices[0].message.content)
     if "Entrer la localisation" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: location"}), 400
-    if "Entrer la surface du bien" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: surface area"}), 400
-    if "Entrer le type du bien" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: type of property"}), 400
-    if "Entrer le prix" in chat_response.choices[0].message.content:
-        return jsonify({"error": "Data missing: price"}), 400
+        return jsonify({"error": "Data missing: location / not precise enough"}), 400
     
-    return jsonify({"real_estate_ad": chat_response.choices[0].message.content}), 200
+    return jsonify({"real_estate_ad": remove_star(chat_response.choices[0].message.content)}), 200
