@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
-from ..model import model, client
 
+from ..model import model, client
+from ..remove_star import remove_star
 
 bp = Blueprint("generate", __name__)
 
@@ -34,4 +35,4 @@ def generate():
     
     
     
-    return jsonify({"real_estate_ad": chat_response.choices[0].message.content}), 200
+    return jsonify({"real_estate_ad": remove_star(chat_response.choices[0].message.content)}), 200
