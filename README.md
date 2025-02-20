@@ -39,7 +39,7 @@ nano .env
 
 ``` text
 SECRET_KEY=<your_secret_key>
-API_KEY=<your_api_key>
+API_KEY=<your_mistral_api_key>
 ```
 
 ## Launching
